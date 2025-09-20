@@ -16,7 +16,7 @@ app.use(cors({ origin: "http://localhost:3000" }));
 cloudinary.config({
   cloud_name: "dm3de3gy3",
   api_key: "384768686711434",
-  api_secret: 'xoumq71Vh_KZtYT6f_S54BgJfTA',
+  api_secret: "xoumq71Vh_KZtYT6f_S54BgJfTA",
 });
 
 // PostgreSQL connection
@@ -50,11 +50,10 @@ app.post("/upload-multiple", upload.array("files"), async (req, res) => {
         streamifier.createReadStream(file.buffer).pipe(uploadStream);
       });
 
-      // Save each document to PostgreSQL
       await pool.query(
-        `INSERT INTO documents.submissions (document_name, submission_id) 
-         VALUES ($1, $2)`,
-        [result.original_filename, submissionId]
+        `INSERT INTO documents.submissions (submission_id, uploaded_on, document_name) 
+        VALUES ($1, NOW(), $2)`,
+        [submissionId, result.original_filename]
       );
 
       uploadedDocs.push({
@@ -64,7 +63,11 @@ app.post("/upload-multiple", upload.array("files"), async (req, res) => {
       });
     }
 
-    res.json({ message: "Files uploaded successfully!", submissionId, uploadedDocs });
+    res.json({
+      message: "Files uploaded successfully!",
+      submissionId,
+      uploadedDocs,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Upload error: " + err.message);
